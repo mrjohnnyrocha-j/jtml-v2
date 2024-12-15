@@ -1,0 +1,40 @@
+site_name: JTML Official Documentation
+site_description: Comprehensive guide to JTML language
+site_author: JTML Development Team
+theme:
+  name: readthedocs
+  logo: images/logo.png
+  favicon: images/favicon.ico
+  palette:
+    primary: 'indigo'
+    accent: 'indigo'
+  font:
+    text: 'Roboto'
+    code: 'Roboto Mono'
+markdown_extensions:
+  - admonition
+  - codehilite:
+      guess_lang: false
+  - toc:
+      permalink: true
+  - footnotes
+nav:
+  - Home: index.md
+  - Introduction: introduction.md
+  - Getting Started:
+      - Installation: getting_started.md#installation
+      - Hello World Example: getting_started.md#hello-world-example
+  - Language Fundamentals:
+      - Lexical Conventions: language_fundamentals.md#lexical-conventions
+      - Syntax Overview: language_fundamentals.md#syntax-overview
+      - Data Types: language_fundamentals.md#data-types
+      - Variables and Constants: language_fundamentals.md#variables-and-constants
+      - Operators: language_fundamentals.md#operators
+      - Expressions and Statements: language_fundamentals.md#expressions-and-statements
+  # ... rest of the navigation
+extra_css:
+  - css/custom.css
+extra_javascript:
+  - js/custom.js
+plugins:
+  - search
