@@ -1,0 +1,31 @@
+[tool.poetry]
+name = "opalg"
+version = "0.1.0"
+description = "OPALG tool with integrated jtml"
+authors = ["Your Name <you@example.com>"]
+
+# Tells Poetry where to find packages
+packages = [
+  { include = "opalg" }  # the folder "opalg/opalg"
+]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+ply = "^3.11"
+pybind11 = "^2.5.0"
+# plus any other runtime deps
+
+[tool.poetry.dev-dependencies]
+pytest = "^7.2"
+
+[tool.poetry.scripts]
+opalg = "opalg.cli:main"
+# Means "poetry run opalg" calls the 'main' function in 'opalg/cli.py'
+
+[build-system]
+requires = [
+  "setuptools>=61",
+  "wheel",
+  "pybind11>=2.5.0"
+]
+build-backend = "setuptools.build_meta"

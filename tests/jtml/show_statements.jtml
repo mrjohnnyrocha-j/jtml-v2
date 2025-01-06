@@ -1,0 +1,4 @@
+#myTag class:"main-wrapper" style:"border: 1px solid black;"\\
+  show "Hello from jtml!"\\
+  show "Another message"\\
+\#myTag

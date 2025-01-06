@@ -1,0 +1,17 @@
+#page style:"background: #fafafa;", class:"pageContainer"\\
+
+  define mainColor="blue"\\
+  show "Starting page..."\\
+
+  #header style:"background: grey"\\
+    show "Header content"\\
+    define headerMsg="Site Title"\\
+  \#header
+
+  #body style:"color: {mainColor};"\\
+    show "Hello from body!"\\
+  \#body
+
+  show "Page finished."\\
+
+\#page

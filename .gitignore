@@ -1,5 +1,5 @@
 build/
-.cpython**
+**.cpython**
 .so
 node_modules/
 poetry.lock

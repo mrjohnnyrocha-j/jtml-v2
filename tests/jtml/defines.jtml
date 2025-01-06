@@ -1,0 +1,5 @@
+#myTag\\
+  define greeting="Hello World"\\
+  define anotherGreeting=greeting\\
+  show "Some text"\\
+\#myTag
