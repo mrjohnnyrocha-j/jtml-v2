@@ -1,6 +1,0 @@
-compiler
-interpreter
-jtml_types
-lexer
-parser
-tests

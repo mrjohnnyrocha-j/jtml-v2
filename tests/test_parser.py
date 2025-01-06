@@ -16,7 +16,7 @@ from compiler.ast_nodes import (
     CryptoVerifyNode, JTMLElementNode, TypeNode, FunctionCallNode,
     ForStatementNode, WhileStatementNode
 )
-from jtml_types.node_types import IntType, VoidType, FloatType, StringType, BoolType, CustomType
+from opalg_types.node_types import IntType, VoidType, FloatType, StringType, BoolType, CustomType
 
 class TestJTMLParser(unittest.TestCase):
     def setUp(self):

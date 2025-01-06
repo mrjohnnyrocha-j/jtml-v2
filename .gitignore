@@ -1,0 +1,10 @@
+build/
+.cpython**
+.so
+node_modules/
+poetry.lock
+__pycache__/
+.venv
+package-lock.json
+.vscode
+.DS_Store

@@ -1,3 +1,0 @@
-[console_scripts]
-jtml-compile = compiler.compiler:main
-jtml-interpreter = interpreter.interpreter:main
