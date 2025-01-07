@@ -126,7 +126,7 @@ private:
     std::unique_ptr<ASTNode> parseDefineStatement() {
         consume(TokenType::DEFINE, "Expected 'define'");
         Token idTok = consume(TokenType::IDENTIFIER, "Expected identifier after 'define'");
-        consume(TokenType::EQUALS, "Expected '=' in define statement");
+        consume(TokenType::ASSIGN, "Expected '=' in define statement");
         Token exprTok = peek();
         if (exprTok.type == TokenType::IDENTIFIER || exprTok.type == TokenType::STRING_LITERAL) {
             advance(); // consume the expression token

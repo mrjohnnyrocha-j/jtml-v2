@@ -17,12 +17,57 @@
 enum class TokenType {
     HASH,              // '#'
     BACKSLASH_HASH,    // '\#'
+    PLUS,
+    PLUSEQ,
+    MINUSEQ,
+    MULTIPLYEQ,
+    DIVIDEEQ,
+    MODULUSEQ,
+    POWEREQ,
+    AND,
+    OR,
+    NOT,
+    LT,
+    GT,
+    LTEQ,
+    GTEQ,
+    EQ,
+    NEQ,
+    ASSIGN,           // '='
+    MINUS,
+    MULTIPLY,
+    DIVIDE,
+    MODULUS,
+    POWER,
+    LPAREN,
+    RPAREN,
     COMMA,             // ','
     COLON,             // ':'
-    EQUALS,            // '='
     STMT_TERMINATOR,   // '\\'
     SHOW,              // 'show'
     DEFINE,            // 'define'
+    DERIVE,
+    UNBIND,
+    STORE,
+    FOR,
+    IF,
+    CONST,
+    IN,
+    BREAK,
+    CONTINUE,
+    THROW,
+    ELSE,
+    WHILE,
+    TRY,
+    CATCH,
+    FINALLY,
+    RETURN,
+    FUNCTION,
+    OBJECT,
+    THIS,
+    ASYNC,
+    IMPORT,
+    MAIN,
     IDENTIFIER,
     STRING_LITERAL,
     END_OF_FILE

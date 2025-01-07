@@ -1,30 +1,42 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.14)
 project(jtml_elements LANGUAGES CXX)
 
+# Set C++ Standard
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# If you rely on httplib:
-include_directories("/opt/homebrew/opt/cpp-httplib/include")
+# Include FetchContent module
+include(FetchContent)
 
-# 1) Find pybind11
-find_package(pybind11 REQUIRED)
+# Fetch pybind11
+FetchContent_Declare(
+    pybind11
+    GIT_REPOSITORY https://github.com/pybind/pybind11.git
+    GIT_TAG        v2.13.6  # Specify the desired version
+)
+FetchContent_MakeAvailable(pybind11)
 
-# 2) Build your python module named "jtml_engine"
+# Build your python module named "jtml_engine"
 add_library(jtml_engine MODULE
     jtml_bindings.cpp      # The Pybind11 file
-    # plus any .cpp that implement the rest:
-    # If your code is purely in .hpp, you can skip .cpp references, 
-    # or create minimal .cpp files for them
+    # Add any additional .cpp files here if necessary
 )
 
-# 3) Link to pybind11
+# Link to pybind11
 target_link_libraries(jtml_engine PRIVATE pybind11::module)
 
-# 4) Avoid "lib" prefix and ensure .so is the extension
-#    (Typically, 'MODULE' sets .so on macOS/Linux, .pyd on Windows)
+# Link to httplib.h
+include_directories(/usr/local/include)
+
+# Set appropriate properties based on the platform
 set_target_properties(jtml_engine PROPERTIES PREFIX "")
-# Optionally: set_target_properties(jtml_engine PROPERTIES SUFFIX ".so")
+if(WIN32)
+    set_target_properties(jtml_engine PROPERTIES SUFFIX ".pyd")
+elseif(APPLE)
+    set_target_properties(jtml_engine PROPERTIES SUFFIX ".so")
+else()
+    set_target_properties(jtml_engine PROPERTIES SUFFIX ".so")
+endif()
 
 # CLI-oriented main
 add_executable(jtml
@@ -36,6 +48,7 @@ add_executable(jtml
     jtml_transpiler.cpp
 )
 
+
 # Test-oriented main
 add_executable(jtml_tests
     main_tests.cpp
@@ -45,3 +58,4 @@ add_executable(jtml_tests
     jtml_interpreter.cpp
     jtml_transpiler.cpp
 )
+
