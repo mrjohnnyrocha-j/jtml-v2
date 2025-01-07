@@ -62,6 +62,16 @@ int main(int argc, char *argv[]) {
         // 2) Lex + Parse
         Lexer lexer(inputText);
         auto tokens = lexer.tokenize();
+
+        const auto& errors = lexer.getErrors();
+        if (!errors.empty()) {
+            for (const auto& error : errors) {
+            std::cerr << error << std::endl;
+            }
+        } else {
+            std::cout << "Lexing completed successfully!" << std::endl;
+        }
+
         Parser parser(std::move(tokens));
         auto root = parser.parseJtmlElement();
 

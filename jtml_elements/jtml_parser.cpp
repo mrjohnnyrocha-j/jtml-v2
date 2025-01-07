@@ -56,8 +56,7 @@ public:
         consume(TokenType::BACKSLASH_HASH, "Expected '\\#'");
         Token closeTag = consume(TokenType::IDENTIFIER, "Expected identifier after '\\#'");
         if (closeTag.text != openTag.text) {
-            throw std::runtime_error("Mismatched closing tag: " 
-                                     + closeTag.text + " != " + openTag.text);
+                recordError("Mismatched closing tag at line" + std::to_string(m_line) + ": " + closeTag.text + " != " + openTag.text);
         }
         return elem;
     }
@@ -65,6 +64,10 @@ public:
 private:
     std::vector<Token> m_tokens;
     size_t m_pos;
+    int m_line;
+    int m_column;
+
+    std::vector<std::string> m_errors;
 
     void parseJtmlBody(JtmlElementNode& elem) {
         // optional attributes
@@ -103,14 +106,20 @@ private:
     }
 
     std::unique_ptr<ASTNode> parseContentItem() {
-        if (check(TokenType::SHOW)) {
-            return parseShowStatement();
-        } else if (check(TokenType::DEFINE)) {
-            return parseDefineStatement();
-        } else if (check(TokenType::HASH)) {
-            return parseJtmlElement();
+        try {
+            if (check(TokenType::SHOW)) {
+                return parseShowStatement();
+            } else if (check(TokenType::DEFINE)) {
+                return parseDefineStatement();
+            } else if (check(TokenType::HASH)) {
+                return parseJtmlElement();
+            }
+            throw std::runtime_error("Unexpected token '" + peek().text + "' in content item.");
+        } catch (const std::runtime_error& e) {
+            recordError(e.what());
+            synchronize();
+            return nullptr;
         }
-        throw std::runtime_error("Unexpected token '" + peek().text + "' in content item.");
     }
 
     std::unique_ptr<ASTNode> parseShowStatement() {
@@ -167,7 +176,11 @@ private:
         if (check(type)) {
             return advance();
         }
-        throw std::runtime_error(errMsg + " at position " + std::to_string(peek().position));
+        auto& badToken = peek();
+        std::string fullMsg = errMsg + " (line " + std::to_string(badToken.line) +
+            ", col " + std::to_string(badToken.column) + "). Found: '" + badToken.text + "'";
+        recordError(fullMsg);
+        synchronize()
     }
 
     Token advance() {
@@ -181,6 +194,23 @@ private:
 
     const Token& peek() const {
         return m_tokens[m_pos];
+    }
+
+    void recordError(const std::string& message) {
+        m_errors.push_back(message);
+    }
+
+    void synchronize() {
+        while (!isAtEnd()) {
+            switch (peek().type) {
+                case TokenType::STMT_TERMINATOR:
+                case TokenType::BACKSLASH_HASH:
+                    advance();
+                    return;
+                default:
+                    advance();
+            }
+        }
     }
 };
 
