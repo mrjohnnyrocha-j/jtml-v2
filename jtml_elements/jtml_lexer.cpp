@@ -120,7 +120,7 @@ public:
                     advance();
                     break;
                 case '=':
-                    tokens.push_back(makeToken(TokenType::EQUALS, "="));
+                    tokens.push_back(makeToken(TokenType::ASSIGN, "="));
                     advance();
                     break;
                 case '"':
