@@ -5,10 +5,10 @@
 #include <memory>
 
 /**
- * Identify node types in the AST. 
+ * Identify node types for statements/markup in the AST. 
  *  - JtmlElement is the markup-like node (#div, #p, etc.).
  *  - ShowStatement, DefineStatement, DeriveStatement, etc. are statements.
- *  - We also have control-flow (If, While, For) and error-handling (TryCatchFinally).
+ *  - We also have control-flow (If, While, For) and error-handling (TryExceptThen).
  */
 enum class ASTNodeType {
     // Markup / structural
@@ -28,9 +28,123 @@ enum class ASTNodeType {
     IfStatement,
     WhileStatement,
     ForStatement,
-    TryCatchFinally
+    TryExceptThen
+
     // etc. if needed
 };
+
+/**
+ * For expression parsing, we define a separate ExpressionStatementNode hierarchy 
+ * (Binary, Unary, Variable, etc.). This is not part of ASTNodeType 
+ * because it's only used inside statements or expressions, 
+ * not top-level statements themselves.
+ */
+enum class ExpressionStatementNodeType {
+    Binary,
+    Unary,
+    Variable,
+    StringLiteral,
+    NumberLiteral
+    // ... you could add BooleanLiteral, etc.
+};
+
+// ------------------- Expression Nodes -------------------
+struct ExpressionStatementNode {
+    virtual ~ExpressionStatementNode() = default;
+    virtual ExpressionStatementNodeType getExprType() const = 0;
+};
+
+/** 
+ * A binary operation (left op right), 
+ * e.g. (a + b), (x * 2), (x == y).
+ */
+struct BinaryExpressionStatementNode : public ExpressionStatementNode {
+    // The operator token (PLUS, MINUS, MULTIPLY, DIVIDE, EQ, NEQ, etc.)
+    // You can store e.g. Token op if you want direct token reference,
+    // or a simple enum describing the operator.
+    // We'll store a text-based operator for simplicity.
+    std::string op; 
+
+    std::unique_ptr<ExpressionStatementNode> left;
+    std::unique_ptr<ExpressionStatementNode> right;
+
+    BinaryExpressionStatementNode(std::string operatorText,
+                   std::unique_ptr<ExpressionStatementNode> l,
+                   std::unique_ptr<ExpressionStatementNode> r)
+        : op(std::move(operatorText)), left(std::move(l)), right(std::move(r)) {}
+
+    ExpressionStatementNodeType getExprType() const override {
+        return ExpressionStatementNodeType::Binary;
+    }
+};
+
+/**
+ * A unary operation, e.g. -x, !x
+ */
+struct UnaryExpressionStatementNode : public ExpressionStatementNode {
+    std::string op;  // e.g. "-", "!"
+
+    std::unique_ptr<ExpressionStatementNode> right;
+
+    UnaryExpressionStatementNode(std::string operatorText, std::unique_ptr<ExpressionStatementNode> r)
+        : op(std::move(operatorText)), right(std::move(r)) {}
+
+    ExpressionStatementNodeType getExprType() const override {
+        return ExpressionStatementNodeType::Unary;
+    }
+};
+
+/**
+ * A variable reference, e.g. "myVar".
+ */
+struct VariableExpressionStatementNode : public ExpressionStatementNode {
+    std::string name;
+
+    VariableExpressionStatementNode(std::string varName)
+        : name(std::move(varName)) {}
+
+    ExpressionStatementNodeType getExprType() const override {
+        return ExpressionStatementNodeType::Variable;
+    }
+};
+
+/**
+ * A string literal, e.g. "Hello world".
+ */
+struct StringLiteralExpressionStatementNode : public ExpressionStatementNode {
+    std::string value;
+
+    explicit StringLiteralExpressionStatementNode(std::string val)
+        : value(std::move(val)) {}
+
+    ExpressionStatementNodeType getExprType() const override {
+        return ExpressionStatementNodeType::StringLiteral;
+    }
+};
+
+/**
+ * A numeric literal, e.g. 42, 3.14
+ * If you prefer, store them as double or string.
+ */
+struct NumberLiteralExpressionStatementNode : public ExpressionStatementNode {
+    std::string value; // or double numericValue
+
+    explicit NumberLiteralExpressionStatementNode(std::string val)
+        : value(std::move(val)) {}
+
+    ExpressionStatementNodeType getExprType() const override {
+        return ExpressionStatementNodeType::NumberLiteral;
+    }
+};
+
+/** 
+ * For booleans or other literal types, you can add more nodes 
+ * (BoolLiteralExpressionStatementNode, etc.) if needed.
+ */
+
+// ----------------------------------------------------------------
+//  Now the main ASTNode hierarchy for statements and markup
+// ----------------------------------------------------------------
 
 // Holds a key:value attribute (e.g. style, class, onclick, etc.)
 struct JtmlAttribute {
@@ -38,7 +152,7 @@ struct JtmlAttribute {
     std::string value;
 };
 
-// ------------------- Base AST Node -------------------
+// ------------------- Base AST Node (Statement-Level) -------------------
 struct ASTNode {
     virtual ~ASTNode() = default;
     virtual ASTNodeType getType() const = 0;
@@ -63,7 +177,10 @@ struct JtmlElementNode : public ASTNode {
 
 // -- ShowStatementNode --
 struct ShowStatementNode : public ASTNode {
-    std::string message;  // The text to display or a partial expression
+    // Before we only had "message" as a string,
+    // now you can consider using an expression node if you want advanced logic
+    // but let's keep it as a string for simple usage:
+    std::string message;
 
     ASTNodeType getType() const override {
         return ASTNodeType::ShowStatement;
@@ -73,7 +190,9 @@ struct ShowStatementNode : public ASTNode {
 // -- DefineStatementNode --
 struct DefineStatementNode : public ASTNode {
     std::string identifier;
-    std::string expression; // could be identifier or literal or bigger expression
+
+    // Replaces old `std::string expression` with a real expression node:
+    std::unique_ptr<ExpressionStatementNode> expression;
 
     ASTNodeType getType() const override {
         return ASTNodeType::DefineStatement;
@@ -84,7 +203,9 @@ struct DefineStatementNode : public ASTNode {
 struct DeriveStatementNode : public ASTNode {
     std::string identifier;
     std::string declaredType; // optional, might be empty
-    std::string expression;   // e.g. "a + b"
+
+    // a real expression node for "a + b"
+    std::unique_ptr<ExpressionStatementNode> expression; 
 
     ASTNodeType getType() const override {
         return ASTNodeType::DeriveStatement;
@@ -102,7 +223,7 @@ struct UnbindStatementNode : public ASTNode {
 
 // -- StoreStatementNode (move variable to a different scope) --
 struct StoreStatementNode : public ASTNode {
-    std::string targetScope; // e.g. "main" or a function/class name
+    std::string targetScope;  // e.g. "main" or a function/class name
     std::string variableName; // the variable being stored
 
     ASTNodeType getType() const override {
@@ -110,23 +231,11 @@ struct StoreStatementNode : public ASTNode {
     }
 };
 
-// -- ExpressionStatementNode --
-/**
- * e.g. "x++", or "someFunc(42)" as a standalone statement
- * This can hold a more complex expression structure if you have an Expression AST.
- * For now, we might store it as a string or separate expression node pointer.
- */
-struct ExpressionStatementNode : public ASTNode {
-    std::string expression;
-
-    ASTNodeType getType() const override {
-        return ASTNodeType::ExpressionStatement;
-    }
-};
 
 // -- ReturnStatementNode --
 struct ReturnStatementNode : public ASTNode {
-    std::string expression; // optional expression
+    // optional expression
+    std::unique_ptr<ExpressionStatementNode> expression; 
 
     ASTNodeType getType() const override {
         return ASTNodeType::ReturnStatement;
@@ -135,7 +244,8 @@ struct ReturnStatementNode : public ASTNode {
 
 // -- ThrowStatementNode --
 struct ThrowStatementNode : public ASTNode {
-    std::string expression; // the error or exception message
+    // an expression representing the error or exception data
+    std::unique_ptr<ExpressionStatementNode> expression;
 
     ASTNodeType getType() const override {
         return ASTNodeType::ThrowStatement;
@@ -149,11 +259,11 @@ struct ThrowStatementNode : public ASTNode {
 // -- IfStatementNode --
 /**
  * if (condition) BLOCK else BLOCK
- * We'll store the condition as a string or an expression pointer, 
+ * We'll store the condition as an expression node,
  * plus two lists of statements for then-block and else-block.
  */
 struct IfStatementNode : public ASTNode {
-    std::string condition; // naive approach, or a separate expression node
+    std::unique_ptr<ExpressionStatementNode> condition; 
     std::vector<std::unique_ptr<ASTNode>> thenStatements;
     std::vector<std::unique_ptr<ASTNode>> elseStatements; // empty if no else
 
@@ -164,7 +274,7 @@ struct IfStatementNode : public ASTNode {
 
 // -- WhileStatementNode --
 struct WhileStatementNode : public ASTNode {
-    std::string condition;
+    std::unique_ptr<ExpressionStatementNode> condition;
     std::vector<std::unique_ptr<ASTNode>> body; // statements
 
     ASTNodeType getType() const override {
@@ -175,13 +285,12 @@ struct WhileStatementNode : public ASTNode {
 // -- ForStatementNode --
 /**
  * for (iterator in expression) BLOCK
- * or for( i in 0..10 ) if you do range
- * We'll store 'iteratorName' plus the expression describing the list/range, 
+ * We'll store 'iteratorName' plus expression describing the list/range, 
  * plus the body statements
  */
 struct ForStatementNode : public ASTNode {
     std::string iteratorName;
-    std::string iterableExpression;
+    std::unique_ptr<ExpressionStatementNode> iterableExpression;
     std::vector<std::unique_ptr<ASTNode>> body;
 
     ASTNodeType getType() const override {
@@ -189,23 +298,30 @@ struct ForStatementNode : public ASTNode {
     }
 };
 
-// -- TryCatchFinallyNode --
+// -- TryExceptThenNode --
 /**
  * try BLOCK
- * catch (errVar) BLOCK
- * finally BLOCK
+ * except (errVar) BLOCK
+ * then BLOCK
+ *
  * Each block is a vector of statements, the catch variable is optional
+ * 'hasCatch' means we have an except block, 'hasFinally' means we have a 'then' block.
+ *
+ * If you want a typical "catch/finally", rename them accordingly. 
+ * The grammar can vary from your original references, but here's a structure:
  */
-struct TryCatchFinallyNode : public ASTNode {
+struct TryExceptThenNode : public ASTNode {
     std::vector<std::unique_ptr<ASTNode>> tryBlock;
+
     bool hasCatch = false;
-    std::string catchIdentifier; // e.g. "e" or "error"
+    std::string catchIdentifier; // e.g. "err"
     std::vector<std::unique_ptr<ASTNode>> catchBlock;
-    bool hasFinally = false;
+
+    bool hasFinally = false;     // or hasThen if you prefer
     std::vector<std::unique_ptr<ASTNode>> finallyBlock;
 
     ASTNodeType getType() const override {
-        return ASTNodeType::TryCatchFinally;
+        return ASTNodeType::TryExceptThen;
     }
 };
 

@@ -1,0 +1,9 @@
+#app
+define a = 2\\
+define b = 4\\
+derive sum = a + b\\
+a = 5\\
+unbind sum\\
+a = 6\\
+show sum\\
+#\app
